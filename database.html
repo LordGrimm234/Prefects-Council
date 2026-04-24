@@ -2,18 +2,21 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Database Manager</title>
+    <title>Database Manager | Winter House</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --bg: #0f172a; --card: #1e293b; --primary: #4a6fa5; --text: #f8fafc; --border: rgba(255,255,255,0.1); }
         body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); padding: 20px; }
         .box { max-width: 900px; margin: auto; }
-        .form { background: var(--card); padding: 20px; border-radius: 12px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 20px; border: 1px solid var(--border); }
-        input { background: #0f172a; border: 1px solid var(--border); color: white; padding: 12px; border-radius: 8px; font-size: 13px; }
-        table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 12px; overflow: hidden; }
+        .form { background: var(--card); padding: 20px; border-radius: 12px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px; border: 1px solid var(--border); }
+        input { background: #0f172a; border: 1px solid var(--border); color: white; padding: 12px; border-radius: 8px; font-size: 14px; width: 100%; box-sizing: border-box; }
+        #drop-zone { grid-column: span 2; border: 2px dashed var(--primary); padding: 30px; text-align: center; border-radius: 12px; cursor: pointer; color: #94a3b8; transition: 0.3s; }
+        #drop-zone.hover { background: rgba(74, 111, 165, 0.2); color: white; }
+        .save-btn { grid-column: span 2; background: var(--primary); color: white; border: none; padding: 15px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; }
+        table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 12px; overflow: hidden; margin-top: 20px; }
         th, td { padding: 15px; text-align: left; border-bottom: 1px solid var(--border); }
         th { background: rgba(0,0,0,0.2); font-size: 11px; color: #94a3b8; text-transform: uppercase; }
-        .save-btn { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; grid-column: span 5; font-weight: bold; }
-        .del-btn { color: #ef4444; background: none; border: 1px solid #ef4444; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; }
+        .del-btn { color: #ef4444; background: none; border: 1px solid #ef4444; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -22,21 +25,27 @@
 
 <div class="box">
     <div style="display:flex; justify-content:space-between; align-items:center;">
-        <h1>📊 Data Register</h1>
-        <a href="info-hub.html" style="color: var(--primary); text-decoration:none; font-weight:bold;">← Hub</a>
+        <h1>📊 Student Registration</h1>
+        <a href="info-hub.html" style="color: var(--primary); text-decoration:none; font-weight:bold;">← Go to Hub</a>
     </div>
 
     <div class="form">
-        <input type="text" id="n" placeholder="Name">
+        <input type="text" id="n" placeholder="Full Name">
         <input type="text" id="h" placeholder="House">
-        <input type="number" id="r" placeholder="Roll No">
+        <input type="number" id="r" placeholder="Roll Number (Unique ID)">
         <input type="text" id="g" placeholder="Grade">
-        <input type="number" id="s" placeholder="Stars">
-        <button class="save-btn" onclick="save()">Save / Update Record</button>
+        <input type="number" id="s" placeholder="Black Stars (Count)" style="grid-column: span 2;">
+        
+        <div id="drop-zone">
+            <span id="drop-text">Drag Student Photo Here or Click to Upload</span>
+            <input type="file" id="fileInput" hidden accept="image/*">
+        </div>
+
+        <button class="save-btn" onclick="save()">Commit Record to Cloud</button>
     </div>
 
     <table>
-        <thead><tr><th>Name</th><th>Roll</th><th>House</th><th>Grade</th><th>Stars</th><th>Action</th></tr></thead>
+        <thead><tr><th>Name</th><th>Roll</th><th>House</th><th>Stars</th><th>Action</th></tr></thead>
         <tbody id="list"></tbody>
     </table>
 </div>
@@ -47,6 +56,55 @@
     const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlY2VjZHRlbWZzcWVtZ2ZrcmJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcwMzU4MzEsImV4cCI6MjA5MjYxMTgzMX0.D6igTj9UlTOi3ws-Pne6MaV9COyhsta-gJnC7mL_ksQ";
     const supabase = createClient(S_URL, S_KEY);
 
+    let selectedFile = null;
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('fileInput');
+
+    dropZone.onclick = () => fileInput.click();
+    dropZone.ondragover = (e) => { e.preventDefault(); dropZone.classList.add('hover'); };
+    dropZone.ondragleave = () => dropZone.classList.remove('hover');
+    dropZone.ondrop = (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('hover');
+        selectedFile = e.dataTransfer.files[0];
+        document.getElementById('drop-text').innerText = "Selected: " + selectedFile.name;
+    };
+    fileInput.onchange = () => {
+        selectedFile = fileInput.files[0];
+        document.getElementById('drop-text').innerText = "Selected: " + selectedFile.name;
+    };
+
+    window.save = async () => {
+        const roll = document.getElementById('r').value;
+        const name = document.getElementById('n').value;
+        if(!roll || !name) return alert("Roll Number and Name are required!");
+
+        let photoUrl = "";
+
+        if(selectedFile) {
+            const fileName = `public/${roll}_${Date.now()}.png`;
+            const { data: upData, error: upErr } = await supabase.storage
+                .from('student-photos')
+                .upload(fileName, selectedFile, { upsert: true });
+            
+            if(upErr) return alert("Image Upload Failed: " + upErr.message);
+            const { data } = supabase.storage.from('student-photos').getPublicUrl(fileName);
+            photoUrl = data.publicUrl;
+        }
+
+        const obj = {
+            name: name,
+            house: document.getElementById('h').value,
+            roll_number: roll,
+            grade: document.getElementById('g').value,
+            black_stars: parseInt(document.getElementById('s').value) || 0,
+            photo_url: photoUrl
+        };
+
+        const { error } = await supabase.from('student_records').upsert([obj]);
+        if(error) alert(error.message); else { alert("Student Data Saved!"); location.reload(); }
+    };
+
     async function load() {
         const { data } = await supabase.from('student_records').select('*').order('name');
         document.getElementById('list').innerHTML = data.map(i => `
@@ -54,27 +112,14 @@
                 <td>${i.name}</td>
                 <td>${i.roll_number}</td>
                 <td>${i.house}</td>
-                <td>${i.grade}</td>
                 <td>${i.black_stars}</td>
                 <td><button class="del-btn" onclick="del('${i.roll_number}')">Delete</button></td>
             </tr>
         `).join('');
     }
 
-    window.save = async () => {
-        const obj = {
-            name: document.getElementById('n').value,
-            house: document.getElementById('h').value,
-            roll_number: document.getElementById('r').value,
-            grade: document.getElementById('g').value,
-            black_stars: parseInt(document.getElementById('s').value) || 0
-        };
-        const { error } = await supabase.from('student_records').upsert([obj]);
-        if(error) alert(error.message); else { alert("Synced"); load(); }
-    };
-
     window.del = async (id) => {
-        if(confirm("Delete record?")) {
+        if(confirm("Permanently remove this student?")) {
             await supabase.from('student_records').delete().eq('roll_number', id);
             load();
         }
