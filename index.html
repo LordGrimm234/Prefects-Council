@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Prefect's Council | Login</title>
+    <style>
+        :root { --bg: #0f172a; --card: #1e293b; --primary: #4a6fa5; --text: #f8fafc; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .login-card { background: var(--card); padding: 40px; border-radius: 16px; width: 320px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); text-align: center; border: 1px solid rgba(255,255,255,0.1); }
+        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: #0f172a; color: white; box-sizing: border-box; outline: none; }
+        input:focus { border-color: var(--primary); }
+        button { width: 100%; padding: 12px; border-radius: 8px; border: none; background: var(--primary); color: white; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .logo { font-size: 40px; margin-bottom: 10px; display: block; }
+    </style>
+</head>
+<body>
+
+<div class="login-card">
+    <span class="logo">❄️</span>
+    <h2>Prefect Council</h2>
+    <p style="color: #94a3b8; font-size: 13px;">Late Comers Tracking System</p>
+    <input type="email" id="email" placeholder="Email">
+    <input type="password" id="pass" placeholder="Password">
+    <button onclick="checkLogin()">Login</button>
+</div>
+
+<script>
+    function checkLogin() {
+        const u = document.getElementById('email').value;
+        const p = document.getElementById('pass').value;
+
+        if(u === "prefect_council@gmail.com" && p === "ryan@james123") {
+            // Save a "key" in the browser so other pages know we logged in
+            sessionStorage.setItem("isLoggedIn", "true");
+            window.location.href = "info-hub.html";
+        } else {
+            alert("Invalid Credentials");
+        }
+    }
+</script>
+</body>
+</html>
