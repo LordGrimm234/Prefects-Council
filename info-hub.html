@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Info Hub | Winter House</title>
+    <style>
+        :root { --bg: #0f172a; --card: #1e293b; --primary: #4a6fa5; --text: #f8fafc; --red: #ef4444; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); padding: 20px; }
+        .nav { display: flex; justify-content: space-between; align-items: center; }
+        .search-bar { width: 100%; max-width: 400px; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: var(--card); color: white; margin: 20px 0; outline: none; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
+        .card { background: var(--card); padding: 25px; border-radius: 16px; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
+        .avatar { width: 70px; height: 70px; border-radius: 50%; background: var(--primary); margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; }
+        .roll { font-size: 12px; color: var(--primary); background: rgba(74, 111, 165, 0.1); padding: 3px 10px; border-radius: 20px; display: inline-block; margin-top: 5px; }
+        .status-alert { margin-top: 15px; padding: 8px; border-radius: 8px; background: rgba(239, 68, 68, 0.1); color: var(--red); font-size: 11px; font-weight: 800; border: 1px solid var(--red); }
+        .btn { padding: 10px 15px; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<script>
+    // Security check: if not logged in, kick back to login page
+    if(sessionStorage.getItem("isLoggedIn") !== "true") { window.location.href = "index.html"; }
+</script>
+
+<div class="nav">
+    <h1>Prefect's Council</h1>
+    <div>
+        <a href="database.html" class="btn" style="background: var(--primary); color: white;">Edit Database</a>
+        <button onclick="sessionStorage.clear(); location.href='index.html'" class="btn" style="background:transparent; color: #94a3b8; border: none;">Logout</button>
+    </div>
+</div>
+
+<input type="text" id="search" class="search-bar" placeholder="Search 4-digit Roll No..." oninput="doSearch()">
+
+<div class="grid" id="container">
+    <p>Loading records...</p>
+</div>
+
+<script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+    const S_URL = "https://tececdtemfsqemgfkrbs.supabase.co";
+    const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlY2VjZHRlbWZzcWVtZ2ZrcmJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcwMzU4MzEsImV4cCI6MjA5MjYxMTgzMX0.D6igTj9UlTOi3ws-Pne6MaV9COyhsta-gJnC7mL_ksQ";
+    const supabase = createClient(S_URL, S_KEY);
+
+    let list = [];
+
+    async function load() {
+        const { data } = await supabase.from('student_records').select('*').order('name');
+        list = data || [];
+        render(list);
+    }
+
+    function render(data) {
+        const div = document.getElementById('container');
+        div.innerHTML = data.map(s => `
+            <div class="card">
+                <div class="avatar">${s.name.charAt(0)}</div>
+                <div style="font-size: 16px; font-weight: 700;">${s.name}</div>
+                <div class="roll">ROLL: ${s.roll_number}</div>
+                ${s.black_stars >= 5 ? `<div class="status-alert">🚨 LAPTOP SEIZED<br>(${s.black_stars} Stars)</div>` : ''}
+            </div>
+        `).join('');
+    }
+
+    window.doSearch = () => {
+        const q = document.getElementById('search').value;
+        const filtered = list.filter(s => s.roll_number.toString().includes(q) || s.name.toLowerCase().includes(q.toLowerCase()));
+        render(filtered);
+    };
+
+    load();
+</script>
+</body>
+</html>
