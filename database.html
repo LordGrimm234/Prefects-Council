@@ -34,10 +34,11 @@
         
         <div id="lookup-status" class="loading-ring">Searching database...</div>
 
-        <input type="text" id="n" placeholder="Name">
-        <input type="text" id="h" placeholder="House">
+        <input type="text" id="n" placeholder="Full Name">
+        <input type="text" id="h" placeholder="Day House">
+        <input type="text" id="bh" placeholder="Boarding House">
         <input type="text" id="g" placeholder="Grade">
-        <input type="number" id="s" placeholder="Black Stars">
+        <input type="number" id="s" placeholder="Black Stars" style="grid-column: span 2;">
         
         <div id="drop-zone">
             <span id="drop-text">Drag NEW Photo (Optional if updating)</span>
@@ -74,6 +75,7 @@
             if (data) {
                 document.getElementById('n').value = data.name;
                 document.getElementById('h').value = data.house;
+                document.getElementById('bh').value = data.boarding_house || "";
                 document.getElementById('g').value = data.grade;
                 document.getElementById('s').value = data.black_stars;
                 existingPhotoUrl = data.photo_url;
@@ -108,6 +110,7 @@
             roll_number: roll,
             name: document.getElementById('n').value,
             house: document.getElementById('h').value,
+            boarding_house: document.getElementById('bh').value,
             grade: document.getElementById('g').value,
             black_stars: parseInt(document.getElementById('s').value) || 0,
             photo_url: finalPhotoUrl
