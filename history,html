@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Late History | Winter House</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { --bg: #0f172a; --card: #1e293b; --primary: #4a6fa5; --text: #f8fafc; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); padding: 20px; }
+        table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 12px; overflow: hidden; margin-top: 20px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 13px; }
+        th { background: rgba(0,0,0,0.2); color: var(--primary); text-transform: uppercase; }
+        .timestamp { color: #94a3b8; font-size: 11px; }
+    </style>
+</head>
+<body>
+
+<div style="display:flex; justify-content:space-between; align-items:center;">
+    <h1>📜 Punishment History</h1>
+    <a href="info-hub.html" style="color:var(--primary); text-decoration:none;">Back to Hub</a>
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th>Date & Time</th>
+            <th>Late Comer</th>
+            <th>House / Boarding</th>
+            <th>Prefect</th>
+            <th>Reason</th>
+        </tr>
+    </thead>
+    <tbody id="historyBody"></tbody>
+</table>
+
+<script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+    const S_URL = "https://tececdtemfsqemgfkrbs.supabase.co";
+    const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlY2VjZHRlbWZzcWVtZ2ZrcmJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcwMzU4MzEsImV4cCI6MjA5MjYxMTgzMX0.D6igTj9UlTOi3ws-Pne6MaV9COyhsta-gJnC7mL_ksQ";
+    const supabase = createClient(S_URL, S_KEY);
+
+    async function loadHistory() {
+        const { data } = await supabase.from('late_logs').select('*').order('created_at', { ascending: false });
+        
+        document.getElementById('historyBody').innerHTML = data.map(log => {
+            const dt = new Date(log.created_at);
+            return `
+                <tr>
+                    <td class="timestamp">${dt.toLocaleDateString()} <br> ${dt.toLocaleTimeString()}</td>
+                    <td><b>${log.student_name}</b><br>ID: ${log.student_roll}</td>
+                    <td>${log.house}<br><small>${log.boarding_house}</small></td>
+                    <td>${log.prefect_name}</td>
+                    <td style="color: #fca5a5;">${log.reason}</td>
+                </tr>
+            `;
+        }).join('');
+    }
+    loadHistory();
+</script>
+</body>
+</html>
