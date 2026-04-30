@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Add Late Entry | Winter House</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { --bg: #0f172a; --card: #1e293b; --primary: #4a6fa5; --text: #f8fafc; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); padding: 20px; display: flex; justify-content: center; }
+        .form-container { width: 100%; max-width: 500px; background: var(--card); padding: 30px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); }
+        input, textarea { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: #0f172a; color: white; box-sizing: border-box; }
+        .verify-card { display: none; text-align: center; margin: 20px 0; padding: 15px; background: rgba(74, 111, 165, 0.1); border-radius: 12px; }
+        .verify-img { width: 120px; height: 120px; border-radius: 12px; object-fit: cover; border: 2px solid var(--primary); }
+        .submit-btn { background: #ef4444; color: white; border: none; width: 100%; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="form-container">
+    <h2>Punishment Entry</h2>
+    <p style="color: #94a3b8;">Enter Roll Number to verify identity</p>
+    
+    <input type="number" id="rollLookup" placeholder="Roll Number..." oninput="verifyStudent()">
+
+    <div id="verifyCard" class="verify-card">
+        <img id="vImg" src="" class="verify-img">
+        <h3 id="vName"></h3>
+        <p id="vHouse" style="font-size: 14px; color: #94a3b8;"></p>
+    </div>
+
+    <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 20px 0;">
+
+    <input type="text" id="prefectName" placeholder="Your Name (Prefect)">
+    <textarea id="reason" rows="3" placeholder="Reason for Black Star..."></textarea>
+    
+    <button class="submit-btn" onclick="submitLate()">Add Black Star & Log</button>
+    <center><br><a href="info-hub.html" style="color:var(--primary); text-decoration:none;">Back to Hub</a></center>
+</div>
+
+<script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+    const S_URL = "https://tececdtemfsqemgfkrbs.supabase.co";
+    const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlY2VjZHRlbWZzcWVtZ2ZrcmJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcwMzU4MzEsImV4cCI6MjA5MjYxMTgzMX0.D6igTj9UlTOi3ws-Pne6MaV9COyhsta-gJnC7mL_ksQ";
+    const supabase = createClient(S_URL, S_KEY);
+
+    let activeStudent = null;
+
+    window.verifyStudent = async () => {
+        const roll = document.getElementById('rollLookup').value;
+        if(roll.length < 2) return;
+
+        const { data } = await supabase.from('student_records').select('*').eq('roll_number', roll).single();
+        
+        if(data) {
+            activeStudent = data;
+            document.getElementById('vImg').src = data.photo_url;
+            document.getElementById('vName').innerText = data.name;
+            document.getElementById('vHouse').innerText = `${data.house} | ${data.boarding_house}`;
+            document.getElementById('verifyCard').style.display = "block";
+        }
+    };
+
+    window.submitLate = async () => {
+        if(!activeStudent) return alert("Verify student first!");
+        
+        // 1. Add to Logs
+        const { error: logErr } = await supabase.from('late_logs').insert([{
+            student_roll: activeStudent.roll_number,
+            student_name: activeStudent.name,
+            house: activeStudent.house,
+            boarding_house: activeStudent.boarding_house,
+            prefect_name: document.getElementById('prefectName').value,
+            reason: document.getElementById('reason').value
+        }]);
+
+        // 2. Increment Black Stars in main table
+        const { error: updateErr } = await supabase.from('student_records')
+            .update({ black_stars: activeStudent.black_stars + 1 })
+            .eq('roll_number', activeStudent.roll_number);
+
+        if(!logErr && !updateErr) {
+            alert("Entry Logged Successfully!");
+            location.reload();
+        }
+    };
+</script>
+</body>
+</html>
