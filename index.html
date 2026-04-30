@@ -29,9 +29,11 @@
         const u = document.getElementById('email').value;
         const p = document.getElementById('pass').value;
 
+        // Using your requested hardcoded credentials
         if(u === "prefect_council@gmail.com" && p === "ryan@james123") {
             // Save a "key" in the browser so other pages know we logged in
             sessionStorage.setItem("isLoggedIn", "true");
+            // Redirect to the Hub
             window.location.href = "info-hub.html";
         } else {
             alert("Invalid Credentials");
